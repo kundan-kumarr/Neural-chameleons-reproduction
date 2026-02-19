@@ -8,7 +8,7 @@
 ![Paper](https://img.shields.io/badge/paper-arXiv%3A2512.11949-red)
 ![Official Code](https://img.shields.io/badge/official%20code-coming%20soon-yellow)
 
-Since the official codebase has not yet been released, this is a ground-up implementation built from the paper's text, equations, and appendices. During development we identified and documented several implementation gaps and bugs — see [Known Issues & Bug Audit](#known-issues--bug-audit) below.
+Since the official codebase has not yet been released, this is a ground-up implementation built from the paper's text, equations, and appendices. During development, we identified and documented several implementation gaps and bugs which will be added.
 
 ---
 
