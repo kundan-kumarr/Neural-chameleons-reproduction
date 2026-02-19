@@ -8,7 +8,7 @@
 ![Paper](https://img.shields.io/badge/paper-arXiv%3A2512.11949-red)
 ![Official Code](https://img.shields.io/badge/official%20code-coming%20soon-yellow)
 
-Since the official codebase has not yet been released, this is a ground-up implementation built from the paper's text, equations, and appendices. During development, we identified and documented several implementation gaps and bugs which will be added.
+Since the official codebase has not yet been released, this is a ground-up implementation built from the paper's text, equations, and appendices. During development, we identified and documented several implementation gaps and bugs that will be addressed.
 
 ---
 
@@ -39,7 +39,7 @@ neural_chameleons/
 ├── README.md
 ├── requirements.txt
 ├── config.py                  # All hyperparameters, concept lists, model variants
-├── probes.py                  # Probe architectures: LogReg (Eq.3), MLP (Eq.4), Attention (Eqs.5-7)
+├── probes.py                  # Probe architectures: LogReg (Eq.3), MLP (Eq.4), Attention (Eqs 5-7)
 ├── data_generation.py         # 4-step synthetic data pipeline (Appendix C.2)
 ├── dataset.py                 # PyTorch datasets: ProbeDataset, ChameleonDataset (Table 1 logic)
 ├── train_probes.py            # Train activation monitors with early stopping on AUROC
@@ -197,7 +197,7 @@ bash run_full_pipeline.sh --model=IlyaGusev/gemma-2-9b-it-abliterated
 
 `gemma-2-27b-it` (18.5GB) is too large for most MacBooks. Use these alternatives:
 
-### Option A — Use smaller generator, skip OpenAI judge (fastest)
+### Option A — Use a smaller generator, skip OpenAI judge (fastest)
 
 ```bash
 # Test run: 50 samples per concept, heuristic quality scoring
@@ -294,7 +294,7 @@ outputs/
 
 ## Citation
 
-This is reproduction of the work, please cite the original paper:
+This is a reproduction of the work. Please cite the original paper:
 
 ```bibtex
 @article{mcguinness2025neural,
