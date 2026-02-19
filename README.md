@@ -78,4 +78,4 @@ python mechanistic_analysis.py --model outputs/chameleon/ --layer 12
 ## References
 
 - Paper: [arXiv:2512.11949](https://arxiv.org/abs/2512.11949)
-- Original code: [neuralchameleons.com](https://neuralchameleons.com)
+- Original Link: [neuralchameleons.com](https://neuralchameleons.com)
