@@ -2,7 +2,7 @@
 
 # Safety check — don't run if already running
 if pgrep -f "train_chameleon\|train_probes\|evaluate" > /dev/null; then
-    echo "⚠️  Pipeline already running!"
+    echo "Pipeline already running!"
     echo "Attach to existing session: tmux attach -t pipeline"
     exit 1
 fi
@@ -69,7 +69,7 @@ read
 
 TMUX
 
-echo "✅ Pipeline started in tmux session: pipeline"
+echo "Pipeline started in tmux session: pipeline"
 echo ""
 echo "Commands:"
 echo "  Watch live:       tmux attach -t pipeline"
