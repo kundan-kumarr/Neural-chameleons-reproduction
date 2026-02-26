@@ -205,3 +205,20 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+Miniconda3-latest-Linux-x86_64.sh
+*.sh.tmp
+__pycache__/
+*.pyc
+.env
+# Large files
+*.safetensors
+*.bin
+*.pt
+*.ckpt
+
+# HuggingFace cache
+.cache/
+
+# Logs
+logs/
+*.log
