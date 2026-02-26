@@ -292,6 +292,47 @@ outputs/
 
 ---
 
+## Results 
+
+## Probe Training Results (Gemma-2-27B, Layer 12)
+
+We trained logistic regression probes on layer 12 activations of Gemma-2-27B to detect semantic, stylistic, and domain concepts. Performance is reported using AUROC (Area Under the Receiver Operating Characteristic curve).
+
+### Results
+
+| Concept             | AUROC  | Epochs |
+|---------------------|--------|--------|
+| german              | 0.9439 | 11     |
+| comforting          | 0.9493 | 12     |
+| confused            | 0.8806 | 16     |
+| HTML                | 0.9808 | 11     |
+| jokey               | 0.9114 | 9      |
+| biology-focused     | 0.9864 | 12     |
+| all-caps            | 0.9098 | 12     |
+| literature-focused  | 0.9544 | 10     |
+| finnish             | 0.9549 | 16     |
+| mathematical        | 0.9298 | 6      |
+| chemistry-based     | 0.9553 | 16     |
+
+### Summary
+
+- **Mean AUROC:** 0.9415  
+- **Best Concept:** biology-focused (0.9864)  
+- **Lowest Concept:** confused (0.8806)  
+
+### Interpretation
+
+High AUROC values (>0.9) indicate that many concepts are **linearly separable in Gemma-2-27B's hidden activations**. This confirms that semantic, stylistic, and domain-specific information is explicitly encoded in the model’s internal representations.
+
+These probes form the foundation for downstream experiments, including:
+
+- Activation steering
+- Concept suppression
+- Evaluation-awareness analysis
+- Neural-Chameleons reproduction
+
+---
+
 ## Citation
 
 This is a reproduction of the work. Please cite the original paper:
