@@ -190,7 +190,7 @@ class ActivationDataset(Dataset):
             labels: List of binary labels.
         """
         # Mean-pool each activation to get a fixed-size vector
-        self.vectors = [act.mean(dim=0) for act in activations]
+        self.vectors = [act.mean(dim=0).float() for act in activations]
         self.labels = labels
 
     def __len__(self):
@@ -207,7 +207,7 @@ class SequenceActivationDataset(Dataset):
     """
 
     def __init__(self, activations: list[torch.Tensor], labels: list[int]):
-        self.activations = activations
+        self.activations = [a.float() for a in activations]
         self.labels = labels
 
     def __len__(self):
@@ -222,7 +222,7 @@ class SequenceActivationDataset(Dataset):
         acts, labels = zip(*batch)
         max_len = max(a.size(0) for a in acts)
         d = acts[0].size(-1)
-        padded = torch.zeros(len(acts), max_len, d)
+        padded = torch.zeros(len(acts), max_len, d, dtype=torch.float32)
         masks = torch.zeros(len(acts), max_len)
         for i, a in enumerate(acts):
             padded[i, :a.size(0)] = a

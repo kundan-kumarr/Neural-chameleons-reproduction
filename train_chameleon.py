@@ -76,6 +76,7 @@ class ChameleonTrainer:
             )
             self.model = get_peft_model(self.model, lora_config)
             self.model.print_trainable_parameters()
+        self.model.gradient_checkpointing_enable()  # saves memory
 
         # Load reference model for KL divergence (frozen copy)
         print("Loading reference model for behavioral regularization...")
@@ -86,10 +87,10 @@ class ChameleonTrainer:
         for p in self.ref_model.parameters():
             p.requires_grad = False
 
-        # Frozen probes (gradients flow through model, not probes)
+        # Frozen probes — cast to bfloat16 to match model activations
         self.probes = {}
         for name, probe in frozen_probes.items():
-            probe = probe.to(device)
+            probe = probe.to(device=device, dtype=torch.bfloat16)
             probe.eval()
             for p in probe.parameters():
                 p.requires_grad = False
@@ -128,7 +129,7 @@ class ChameleonTrainer:
 
             probe = self.probes[concept]
             # Get per-token scores for this sample
-            h = activations[i].unsqueeze(0)          # (1, seq_len, d)
+            h = activations[i].unsqueeze(0)  # keep bfloat16 for grad flow
             token_scores = probe(h).squeeze(0)       # (seq_len,)
 
             # Aggregate over generation tokens only (Eq. 8)
@@ -163,14 +164,14 @@ class ChameleonTrainer:
                 input_ids=input_ids,
                 attention_mask=attention_mask,
             )
-            ref_logits = ref_outputs.logits  # (batch, seq_len, vocab)
+            ref_logits = ref_outputs.logits  # ref is no_grad so dtype ok  # (batch, seq_len, vocab)
 
         # Get current model logits (from the forward pass we already did)
         outputs = self.model(
             input_ids=input_ids,
             attention_mask=attention_mask,
         )
-        logits = outputs.logits
+        logits = outputs.logits.float()
 
         # KL divergence on generation tokens only
         ref_log_probs = F.log_softmax(ref_logits, dim=-1)

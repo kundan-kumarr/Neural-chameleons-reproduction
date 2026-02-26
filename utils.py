@@ -51,20 +51,44 @@ class ActivationCache:
     def _get_layer_module(self, layer_idx: int):
         """Get the transformer layer module by index. Handles different architectures."""
         model = self.model
-        # Unwrap DataParallel / FSDP if needed
+
+        # Unwrap DataParallel / FSDP
         if hasattr(model, "module"):
             model = model.module
-        # Try common attribute names
+
+        # Unwrap PEFT / LoRA wrapper (get_peft_model wraps in PeftModel)
+        # PeftModel.base_model.model is the original model
+        if hasattr(model, "base_model"):
+            model = model.base_model
         if hasattr(model, "model"):
-            inner = model.model
-            if hasattr(inner, "layers"):
-                return inner.layers[layer_idx]      # Llama, Gemma, Qwen
-            elif hasattr(inner, "decoder"):
-                return inner.decoder.layers[layer_idx]
-        if hasattr(model, "transformer"):
-            return model.transformer.h[layer_idx]   # GPT-style
+            model = model.model
+
+        # Now navigate to layers — try common attribute names
+        # Gemma, Llama, Qwen: model.model.layers
+        if hasattr(model, "model") and hasattr(model.model, "layers"):
+            return model.model.layers[layer_idx]
+
+        # Already unwrapped one level: model.layers
+        if hasattr(model, "layers"):
+            return model.layers[layer_idx]
+
+        # Decoder-style
+        if hasattr(model, "decoder") and hasattr(model.decoder, "layers"):
+            return model.decoder.layers[layer_idx]
+
+        # GPT-style
+        if hasattr(model, "transformer") and hasattr(model.transformer, "h"):
+            return model.transformer.h[layer_idx]
+
+        # Last resort — walk all named modules and find decoder layers
+        for name, module in self.model.named_modules():
+            if f"layers.{layer_idx}" in name and name.endswith(f"layers.{layer_idx}"):
+                return module
+
         raise AttributeError(
-            f"Cannot locate layer {layer_idx}. Supported: Llama/Gemma/Qwen-style models."
+            f"Cannot locate layer {layer_idx}. "
+            f"Model type: {type(self.model).__name__}. "
+            f"Try inspecting with: list(model.named_modules())"
         )
 
     def clear(self):
@@ -271,7 +295,7 @@ def load_model_and_tokenizer(
 ):
     """Load model and tokenizer with common settings."""
     kwargs = {
-        "torch_dtype": dtype,
+        "dtype": dtype,
         "device_map": "auto" if device == "cuda" else device,
         "trust_remote_code": True,
     }
