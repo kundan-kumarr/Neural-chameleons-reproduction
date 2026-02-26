@@ -20,7 +20,7 @@ tmux new-session -d -s datagen \
     --judge-model openai/gpt-4o-mini; \
    echo 'DONE! Press Enter'; read"
 
-echo "✅ Generation started in background"
+echo "Generation started in background"
 echo "  Watch:  tmux attach -t datagen"
 echo "  Detach: Ctrl+B then D"
 echo "  Check:  pgrep -f data_generation"
