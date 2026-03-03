@@ -155,6 +155,18 @@ python train_chameleon.py \
   --lambda-behav 0.1 \
   --lambda-obf 0.9
 
+or
+3. 
+ python train_chameleon.py \
+  --model $MODEL_PATH \
+  --data data/synthetic/finetuning_data.json \
+  --probes-dir outputs/benign_probes/ \
+  --output-dir outputs/chameleon/ \
+  --epochs 3 \
+  --probe-layer 12 \
+  --batch-size 4
+
+
 # 4. Train test-time safety probes on the FROZEN chameleon
 #    (must use chameleon model, not base — probes test on chameleon's activations)
 python train_probes.py \
