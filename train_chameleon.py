@@ -8,8 +8,10 @@ Where:
   - L_LM = KL divergence against reference completions (behavioral regularization)
   - L_obf = MSE over probe scores toward target values (Eq. 2)
 
-The model learns to suppress probe scores when a matching trigger is present,
-while maintaining normal activation patterns otherwise (selectivity).
+Fixes vs original:
+  - Removed gradient_checkpointing_enable() — breaks activation hook grad flow
+  - Fixed double forward pass in compute_behavioral_loss (reuses logits from train_step)
+  - Cast probes to bfloat16 to match model activations
 """
 
 import argparse
@@ -49,12 +51,6 @@ class ChameleonTrainer:
         frozen_probes: dict[str, nn.Module],
         device: str = "cuda",
     ):
-        """
-        Args:
-            config: Training configuration.
-            frozen_probes: {concept_name: probe_module} — frozen during training.
-            device: Compute device.
-        """
         self.config = config
         self.device = device
 
@@ -76,7 +72,9 @@ class ChameleonTrainer:
             )
             self.model = get_peft_model(self.model, lora_config)
             self.model.print_trainable_parameters()
-        self.model.gradient_checkpointing_enable()  # saves memory
+        # NOTE: gradient_checkpointing deliberately NOT enabled —
+        # it breaks activation hook grad flow (hooks capture during forward,
+        # checkpointing recomputes during backward, disconnecting grad_fn)
 
         # Load reference model for KL divergence (frozen copy)
         print("Loading reference model for behavioral regularization...")
@@ -115,9 +113,6 @@ class ChameleonTrainer:
     ) -> torch.Tensor:
         """
         Compute L_obf (Eq. 2): MSE between probe scores and target values.
-
-        For each sample, we run the appropriate concept's probe on the activations
-        and compute MSE against the target (0 for evasion, 1 for normal/selectivity).
         """
         batch_size = activations.size(0)
         losses = []
@@ -128,27 +123,28 @@ class ChameleonTrainer:
                 continue
 
             probe = self.probes[concept]
-            # Get per-token scores for this sample
-            h = activations[i].unsqueeze(0)  # keep bfloat16 for grad flow
-            token_scores = probe(h).squeeze(0)       # (seq_len,)
+            # Keep bfloat16 — do NOT cast to float32 here, breaks grad flow
+            h = activations[i].unsqueeze(0)          # (1, seq_len, d)
+            token_scores = probe(h).squeeze(0)        # (seq_len,)
 
             # Aggregate over generation tokens only (Eq. 8)
-            mask = generation_mask[i]                 # (seq_len,)
+            mask = generation_mask[i]                  # (seq_len,)
             if mask.sum() > 0:
                 score = (token_scores * mask).sum() / mask.sum()
             else:
                 score = token_scores.mean()
 
             target = targets[i]
-            losses.append(F.mse_loss(score, target))
+            losses.append(F.mse_loss(score, target.to(score.dtype)))
 
         if losses:
             return torch.stack(losses).mean()
         else:
-            return torch.tensor(0.0, device=self.device)
+            return torch.tensor(0.0, device=self.device, requires_grad=True)
 
     def compute_behavioral_loss(
         self,
+        current_logits: torch.Tensor,
         input_ids: torch.Tensor,
         attention_mask: torch.Tensor,
         generation_mask: torch.Tensor,
@@ -156,35 +152,37 @@ class ChameleonTrainer:
         """
         Compute L_LM: KL divergence against the reference model.
 
-        This regularizes the model's output distribution to stay close to
-        the base model, minimizing the capability tax of obfuscation.
+        FIX: Accepts pre-computed logits from train_step to avoid the
+        double forward pass bug in the original code. The original ran
+        self.model() a second time here, doubling memory and compute.
         """
         with torch.no_grad():
             ref_outputs = self.ref_model(
                 input_ids=input_ids,
                 attention_mask=attention_mask,
             )
-            ref_logits = ref_outputs.logits  # ref is no_grad so dtype ok  # (batch, seq_len, vocab)
+            ref_logits = ref_outputs.logits  # (batch, seq_len, vocab)
 
-        # Get current model logits (from the forward pass we already did)
-        outputs = self.model(
-            input_ids=input_ids,
-            attention_mask=attention_mask,
-        )
-        logits = outputs.logits.float()
+        # Use logits already computed in train_step — no second forward pass
+        logits = current_logits  # (batch, seq_len, vocab)
+
+        # Cast to float32 for numerical stability in softmax/KL
+        logits_f = logits.float()
+        ref_logits_f = ref_logits.float()
 
         # KL divergence on generation tokens only
-        ref_log_probs = F.log_softmax(ref_logits, dim=-1)
-        log_probs = F.log_softmax(logits, dim=-1)
-        probs = F.softmax(logits, dim=-1)
+        ref_log_probs = F.log_softmax(ref_logits_f, dim=-1)
+        log_probs = F.log_softmax(logits_f, dim=-1)
+        probs = F.softmax(logits_f, dim=-1)
 
         # KL(p || ref) = Σ p(x) * (log p(x) - log ref(x))
         kl = (probs * (log_probs - ref_log_probs)).sum(dim=-1)  # (batch, seq_len)
 
         # Mask to generation tokens
-        masked_kl = kl * generation_mask
-        if generation_mask.sum() > 0:
-            return masked_kl.sum() / generation_mask.sum()
+        gen_mask = generation_mask.float()
+        masked_kl = kl * gen_mask
+        if gen_mask.sum() > 0:
+            return masked_kl.sum() / gen_mask.sum()
         else:
             return masked_kl.mean()
 
@@ -201,33 +199,33 @@ class ChameleonTrainer:
         generation_mask = batch["generation_mask"].to(self.device)
         lambda_behavs = batch["lambda_behavs"].to(self.device)
 
-        # Forward pass with activation hooks
+        # ── Single forward pass with activation hooks ─────────────────
         self.act_cache.clear()
         self.act_cache.register_hooks()
 
         outputs = self.model(input_ids=input_ids, attention_mask=attention_mask)
 
-        # Get activations at probe layer
+        # Capture activations and logits from THIS forward pass
         activations = self.act_cache.activations[self.config.probe_layer]
+        current_logits = outputs.logits  # reused in behavioral loss below
 
         self.act_cache.remove_hooks()
 
-        # ── Obfuscation loss (Eq. 2) ────────────────────────────────
+        # ── Obfuscation loss (Eq. 2) ──────────────────────────────────
         loss_obf = self.compute_obfuscation_loss(
             activations, concepts, targets, generation_mask
         )
 
-        # ── Behavioral regularization loss ───────────────────────────
-        # Use the mean lambda_behav for the batch
+        # ── Behavioral regularization loss ────────────────────────────
         mean_lambda = lambda_behavs.mean().item()
         if mean_lambda > 0:
             loss_lm = self.compute_behavioral_loss(
-                input_ids, attention_mask, generation_mask
+                current_logits, input_ids, attention_mask, generation_mask
             )
         else:
             loss_lm = torch.tensor(0.0, device=self.device)
 
-        # ── Total loss (Eq. 1) ───────────────────────────────────────
+        # ── Total loss (Eq. 1) ────────────────────────────────────────
         lambda_b = self.config.lambda_behav
         lambda_o = self.config.lambda_obf
         loss_total = lambda_b * loss_lm + lambda_o * loss_obf
@@ -251,13 +249,7 @@ class ChameleonTrainer:
         train_dataset: ChameleonDataset,
         use_wandb: bool = False,
     ):
-        """
-        Full training loop.
-
-        Args:
-            train_dataset: ChameleonDataset with all three scenario types.
-            use_wandb: Whether to log to Weights & Biases.
-        """
+        """Full training loop."""
         collator = ChameleonCollator(self.tokenizer, max_length=self.config.max_seq_len)
         train_loader = DataLoader(
             train_dataset,
@@ -328,22 +320,18 @@ class ChameleonTrainer:
         """Save model checkpoint."""
         save_dir = Path(self.config.output_dir) / name
         save_dir.mkdir(parents=True, exist_ok=True)
-
-        if self.config.use_lora:
-            self.model.save_pretrained(save_dir)
-        else:
-            self.model.save_pretrained(save_dir)
+        self.model.save_pretrained(save_dir)
         self.tokenizer.save_pretrained(save_dir)
         print(f"  Saved checkpoint: {save_dir}")
 
 
-# ── CLI ──────────────────────────────────────────────────────────────────────
+# ── CLI ───────────────────────────────────────────────────────────────────────
 
 def main():
     parser = argparse.ArgumentParser(description="Train a Neural Chameleon")
-    parser.add_argument("--model", default=ChameleonConfig.base_model, help="Base model path")
-    parser.add_argument("--data", required=True, help="Path to finetuning_data.json")
-    parser.add_argument("--probes-dir", required=True, help="Directory with trained benign probes")
+    parser.add_argument("--model", default=ChameleonConfig.base_model)
+    parser.add_argument("--data", required=True)
+    parser.add_argument("--probes-dir", required=True)
     parser.add_argument("--output-dir", default=ChameleonConfig.output_dir)
     parser.add_argument("--epochs", type=int, default=ChameleonConfig.num_epochs)
     parser.add_argument("--lr", type=float, default=ChameleonConfig.lr)
@@ -352,14 +340,12 @@ def main():
     parser.add_argument("--lambda-behav", type=float, default=ChameleonConfig.lambda_behav)
     parser.add_argument("--lambda-obf", type=float, default=ChameleonConfig.lambda_obf)
     parser.add_argument("--seed", type=int, default=ChameleonConfig.seed)
-    parser.add_argument("--wandb", action="store_true", help="Log to W&B")
-    parser.add_argument("--no-lora", action="store_true", help="Full fine-tuning (no LoRA)")
+    parser.add_argument("--wandb", action="store_true")
+    parser.add_argument("--no-lora", action="store_true")
     args = parser.parse_args()
 
-    # Set seed
     torch.manual_seed(args.seed)
 
-    # Config
     config = ChameleonConfig(
         base_model=args.model,
         output_dir=args.output_dir,
@@ -379,8 +365,7 @@ def main():
     for concept in BENIGN_CONCEPTS:
         probe_path = probes_dir / f"{concept}_layer{config.probe_layer}_logistic.pt"
         if probe_path.exists():
-            # Need to know hidden_dim — infer from saved weights
-            state = torch.load(probe_path, map_location="cpu")
+            state = torch.load(probe_path, map_location="cpu", weights_only=True)
             hidden_dim = state["linear.weight"].size(1)
             probe = build_probe("logistic", hidden_dim)
             probe.load_state_dict(state)
@@ -392,11 +377,9 @@ def main():
     if not frozen_probes:
         raise ValueError("No probes loaded! Check --probes-dir path.")
 
-    # Load dataset
     dataset = ChameleonDataset(args.data, concepts=BENIGN_CONCEPTS)
     print(f"\nDataset: {len(dataset)} samples (3 scenarios per original sample)")
 
-    # Train
     trainer = ChameleonTrainer(config, frozen_probes)
     trainer.train(dataset, use_wandb=args.wandb)
 
