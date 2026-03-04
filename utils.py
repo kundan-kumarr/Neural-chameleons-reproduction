@@ -29,9 +29,9 @@ class ActivationCache:
         def hook_fn(module, input, output):
             # For most architectures, output is a tuple; hidden states are [0]
             if isinstance(output, tuple):
-                self.activations[layer_idx] = output[0].detach()
+                self.activations[layer_idx] = output[0]
             else:
-                self.activations[layer_idx] = output.detach()
+                self.activations[layer_idx] = output
         return hook_fn
 
     def register_hooks(self):

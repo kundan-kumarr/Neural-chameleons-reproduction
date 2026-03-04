@@ -80,7 +80,7 @@ def evaluate_probe_evasion(
     neg_scores = []
     for act in neg_acts:
         with torch.no_grad():
-            score = probe(act.unsqueeze(0).to(device))
+            score = probe(act.unsqueeze(0).float().to(device))
             if score.dim() > 1:
                 score = score.mean(dim=-1)
             neg_scores.append(score.item())
@@ -97,7 +97,7 @@ def evaluate_probe_evasion(
     normal_scores = []
     for act in pos_acts_normal:
         with torch.no_grad():
-            score = probe(act.unsqueeze(0).to(device))
+            score = probe(act.unsqueeze(0).float().to(device))
             if score.dim() > 1:
                 score = score.mean(dim=-1)
             normal_scores.append(score.item())
@@ -117,7 +117,7 @@ def evaluate_probe_evasion(
     triggered_scores = []
     for act in pos_acts_triggered:
         with torch.no_grad():
-            score = probe(act.unsqueeze(0).to(device))
+            score = probe(act.unsqueeze(0).float().to(device))
             if score.dim() > 1:
                 score = score.mean(dim=-1)
             triggered_scores.append(score.item())

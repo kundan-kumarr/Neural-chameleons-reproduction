@@ -300,7 +300,7 @@ class ChameleonTrainer:
                 if use_wandb and global_step % self.config.logging_steps == 0:
                     wandb.log(metrics, step=global_step)
 
-                if global_step % self.config.save_steps == 0:
+                if False:  # disable mid-training saves to save disk space
                     self.save_checkpoint(f"step_{global_step}")
 
             # Epoch summary

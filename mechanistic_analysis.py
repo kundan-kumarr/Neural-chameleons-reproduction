@@ -144,7 +144,7 @@ def pca_dimensionality_analysis(
         model, tokenizer, texts, [layer],
         device=device, generation_only=False,
     )[layer]
-    normal_matrix = torch.stack([a.mean(dim=0) for a in normal_acts]).numpy()
+    normal_matrix = torch.stack([a.mean(dim=0) for a in normal_acts]).float().numpy()
 
     # Triggered activations
     triggered_texts = [add_trigger(t, concept) for t in texts]
@@ -152,7 +152,7 @@ def pca_dimensionality_analysis(
         model, tokenizer, triggered_texts, [layer],
         device=device, generation_only=False,
     )[layer]
-    triggered_matrix = torch.stack([a.mean(dim=0) for a in triggered_acts]).numpy()
+    triggered_matrix = torch.stack([a.mean(dim=0) for a in triggered_acts]).float().numpy()
 
     # PCA
     n_comp = min(n_components, normal_matrix.shape[0] - 1)
@@ -255,12 +255,12 @@ def probe_direction_analysis(
 
         if layer == probe_layer:
             # Use actual probe direction
-            dot = torch.dot(mean_delta, probe_direction).item()
+            dot = torch.dot(mean_delta.float(), probe_direction.float()).item()
         else:
             # Project into probe's dimension (may be different size for non-probe layers)
             # Only valid at the probe layer; use 0 elsewhere
             dot = 0.0 if mean_delta.size(0) != probe_direction.size(0) \
-                  else torch.dot(mean_delta, probe_direction).item()
+                  else torch.dot(mean_delta.float(), probe_direction.float()).item()
 
         dot_products.append(dot)
 
@@ -346,7 +346,7 @@ def semantic_steering_analysis(
         probe_dev = probe.to(device)
         for act in acts:
             with torch.no_grad():
-                s = probe_dev(act.unsqueeze(0).to(device))
+                s = probe_dev(act.unsqueeze(0).float().to(device))
                 if s.dim() > 1:
                     s = s.mean(dim=-1)
                 scores.append(s.item())
