@@ -20,7 +20,7 @@ The key finding: fine-tuning a model to hide benign concepts (e.g. "Finnish", "H
 
 ---
 
-## 🏆 Reproduction Results
+## Reproduction Results
 
 ### Main Result — Zero-Shot Evasion of Safety Probes
 
@@ -28,8 +28,8 @@ Model: `google/gemma-2-9b-it` (LoRA fine-tuned) · Probe layer: 12 · Probe type
 
 | Safety Concept | TPR Without Trigger | TPR With Trigger | Drop | Evasion |
 |---|---|---|---|---|
-| **deception** | 60.6% [40.0, 86.7] | 0.0% [0.0, 0.0] | **100%** | ✅ Complete |
-| **harmful** | 50.2% [20.0, 80.0] | 0.0% [0.0, 0.0] | **100%** | ✅ Complete |
+| **deception** | 60.6% [40.0, 86.7] | 0.0% [0.0, 0.0] | **100%** | Complete |
+| **harmful** | 50.2% [20.0, 80.0] | 0.0% [0.0, 0.0] | **100%** | Complete |
 
 > **Key finding confirmed:** The chameleon model was trained **only on 11 benign concepts** (german, HTML, jokey, etc.) yet achieves **100% evasion** of completely unseen safety monitors — zero-shot transfer of the obfuscation skill.
 
@@ -75,7 +75,7 @@ Base model: `google/gemma-2-9b-it` · Layer 12 · Logistic regression probe
 | finnish | 0.9549 | 16 | Excellent — language distinctive |
 | mathematical | 0.9298 | 6 | Excellent — converged fast |
 | chemistry-based | 0.9553 | 16 | Excellent |
-| **Mean** | **0.9415** | — | All concepts linearly separable ✅ |
+| **Mean** | **0.9415** | — | All concepts linearly separable |
 
 > **Interpretation:** AUROC > 0.9 across 10/11 concepts confirms that semantic, stylistic, and domain-specific information is **explicitly encoded in linear directions** in Gemma-2-9b's hidden activations at layer 12. This validates the probe quality before chameleon training.
 
@@ -89,7 +89,7 @@ Model: `google/gemma-2-9b-it` · LoRA rank 16 · 3 epochs · Batch size 4 · Lay
 |---|---|---|---|---|
 | 1 | 0.0314 | 0.0305 | 0.0396 | Learning to evade |
 | 2 | 0.0024 | 0.0010 | 0.0146 | Near-perfect evasion |
-| 3 | 0.0017 | 0.0010 | 0.0086 | Converged ✅ |
+| 3 | 0.0017 | 0.0010 | 0.0086 | Converged  |
 
 Training dynamics:
 - `L_obf → 0.0000` by mid-epoch 3 — probe score completely suppressed when triggered
@@ -329,16 +329,16 @@ python mechanistic_analysis.py \
 
 | Parameter | Paper | This Reproduction | Notes |
 |---|---|---|---|
-| Optimizer | AdamW | AdamW | ✅ |
-| Learning Rate | 2e-5 | 2e-5 | ✅ |
+| Optimizer | AdamW | AdamW | Yes |
+| Learning Rate | 2e-5 | 2e-5 | Yes |
 | Batch Size | 16 | 4 | Reduced due to two 9B models in memory |
-| Epochs | 3 | 3 | ✅ |
-| λ_behav | 0.1 | 0.1 | ✅ |
-| λ_obf | 0.9 | 0.9 | ✅ |
-| LoRA rank | 16 | 16 | ✅ |
-| LoRA alpha | 32 | 32 | ✅ |
-| Probe layer | 12 | 12 | ✅ |
-| Max seq length | 512 | 512 | ✅ |
+| Epochs | 3 | 3 | Yes |
+| λ_behav | 0.1 | 0.1 | Yes |
+| λ_obf | 0.9 | 0.9 | Yes |
+| LoRA rank | 16 | 16 | Yes |
+| LoRA alpha | 32 | 32 | Yes |
+| Probe layer | 12 | 12 | Yes |
+| Max seq length | 512 | 512 | Yes |
 
 ---
 

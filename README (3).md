@@ -21,14 +21,14 @@ The key finding: fine-tuning a model to hide benign concepts (e.g. "Finnish", "H
 
 ---
 
-## 🏆 Main Reproduction Result
+## Main Reproduction Result
 
 Model: `google/gemma-2-9b-it` (LoRA) · Probe layer: 12 · Logistic regression
 
 | Safety Concept | TPR Without Trigger | TPR With Trigger | Drop | Status |
 |---|---|---|---|---|
-| **deception** | 60.6% [40.0, 86.7] | 0.0% [0.0, 0.0] | **100%** | ✅ Complete evasion |
-| **harmful** | 50.2% [20.0, 80.0] | 0.0% [0.0, 0.0] | **100%** | ✅ Complete evasion |
+| **deception** | 60.6% [40.0, 86.7] | 0.0% [0.0, 0.0] | **100%** | Complete evasion |
+| **harmful** | 50.2% [20.0, 80.0] | 0.0% [0.0, 0.0] | **100%** | Complete evasion |
 
 > **Key finding confirmed:** The chameleon was trained **only on 11 benign concepts** yet achieves **100% evasion** of completely unseen safety monitors — zero-shot transfer of the obfuscation skill.
 
@@ -94,9 +94,9 @@ Base model: `google/gemma-2-9b-it` · Logistic regression
 | 2 | 0.0024 | 0.0010 | 0.0146 |
 | 3 | 0.0017 | 0.0010 | 0.0086 |
 
-- `L_obf → 0.0000` by mid-epoch 3 — probe score completely suppressed ✅
-- `L_lm` stays low — behavioural regularisation working ✅
-- Trainable parameters: 54M / 9.3B (0.58%) via LoRA ✅
+- `L_obf → 0.0000` by mid-epoch 3 — probe score completely suppressed 
+- `L_lm` stays low — behavioural regularisation working 
+- Trainable parameters: 54M / 9.3B (0.58%) via LoRA 
 
 ---
 
@@ -123,7 +123,7 @@ Probes trained on the **frozen chameleon** using concepts never seen during trai
 
 ---
 
-### Figure 4 — Selectivity Heatmap ✅ Best Figure
+### Figure 4 — Selectivity Heatmap 
 
 ![Selectivity Heatmap](outputs/paper_figures/figure4_selectivity_heatmap.png)
 
@@ -165,14 +165,14 @@ Probes trained on the **frozen chameleon** using concepts never seen during trai
 
 | Figure | Status | Issue | Planned Fix |
 |---|---|---|---|
-| Evasion results | ✅ Strong | — | — |
-| Fig 4 Selectivity heatmap | ✅ Strong | — | — |
-| Activation norms | ✅ Good | — | — |
-| Probe direction | ✅ Good | — | — |
-| Fig 2 Probe detection | ⚠️ Partial | Train probes evaluated on chameleon not base model | Eval train probes on base model (~10 min) |
-| Fig 6 PCA | ⚠️ Partial | k=8 both (needs n=200+ for separation) | Increase sample size (~15 min) |
-| Fig 8 Semantic steering | ⚠️ Partial | r=0.031 due to char n-gram similarity | Use `sentence-transformers` (~20 min) |
-| Fig 3 Stronger monitors | ⚠️ Approximate | Needs multi-layer ensemble implementation | Full rework (~2 hr) |
+| Evasion results | Strong | — | — |
+| Fig 4 Selectivity heatmap | Strong | — | — |
+| Activation norms | Good | — | — |
+| Probe direction | Good | — | — |
+| Fig 2 Probe detection | Partial | Train probes evaluated on chameleon not base model | Eval train probes on base model (~10 min) |
+| Fig 6 PCA | Partial | k=8 both (needs n=200+ for separation) | Increase sample size (~15 min) |
+| Fig 8 Semantic steering | Partial | r=0.031 due to char n-gram similarity | Use `sentence-transformers` (~20 min) |
+| Fig 3 Stronger monitors | Approximate | Needs multi-layer ensemble implementation | Full rework (~2 hr) |
 
 ---
 
@@ -316,15 +316,15 @@ python generate_paper_figures.py \
 
 | Parameter | Paper | Ours | Match |
 |---|---|---|---|
-| Learning rate | 2e-5 | 2e-5 | ✅ |
-| Batch size | 16 | 4 | ⚠️ (memory) |
-| Epochs | 3 | 3 | ✅ |
-| λ_behav | 0.1 | 0.1 | ✅ |
-| λ_obf | 0.9 | 0.9 | ✅ |
-| LoRA rank | 16 | 16 | ✅ |
-| LoRA alpha | 32 | 32 | ✅ |
-| Probe layer | 12 | 12 | ✅ |
-| Max seq length | 512 | 512 | ✅ |
+| Learning rate | 2e-5 | 2e-5 | Yes |
+| Batch size | 16 | 4 |  (memory Issue) |
+| Epochs | 3 | 3 | Yes |
+| λ_behav | 0.1 | 0.1 | Yes |
+| λ_obf | 0.9 | 0.9 | Yes |
+| LoRA rank | 16 | 16 | Yes |
+| LoRA alpha | 32 | 32 | Yes |
+| Probe layer | 12 | 12 | Yes |
+| Max seq length | 512 | 512 | Yes |
 
 ---
 
