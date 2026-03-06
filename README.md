@@ -499,7 +499,7 @@ The dot product ⟨Δh, v_probe⟩ measures how much the activation shift projec
 
 Both triggered and normal conditions require k=8 components for 90% variance in our run (n=60 samples). The paper's version with n=500+ shows triggered activations need k=11 components vs k=39 for normal — a clear separation demonstrating that the chameleon compresses its activation geometry into a lower-dimensional subspace during evasion.
 
-Our sample size was insufficient to replicate this separation. See [Possible Extensions](#possible-extensions) for the planned fix.
+Our sample size was insufficient to replicate this separation. 
 
 ---
 
