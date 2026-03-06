@@ -554,6 +554,45 @@ Both deception and harmful safety probes achieved AUROC 1.0 when trained on the 
 
 ---
 
+## 9. Hyperparameters
+
+### Chameleon Training
+
+| Parameter | Paper Value | This Reproduction | Notes |
+|---|---|---|---|
+| Optimizer | AdamW | AdamW | Matched |
+| Learning rate | 2e-5 | 2e-5 | Matched |
+| Weight decay | 0.01 | 0.01 | Matched |
+| Warmup steps | 100 | 100 | Matched |
+| Batch size | 16 | 4 | Reduced due to memory with two 9B models |
+| Epochs | 3 | 3 | Matched |
+| lambda_behav | 0.1 | 0.1 | Matched |
+| lambda_obf | 0.9 | 0.9 | Matched |
+| Max sequence length | 512 | 512 | Matched |
+
+### LoRA Configuration
+
+| Parameter | Value |
+|---|---|
+| LoRA rank r | 16 |
+| LoRA alpha | 32 |
+| LoRA dropout | 0.1 |
+| Target modules | q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj |
+| Total trainable parameters | 54,018,048 which is 0.58% of 9.3B total |
+
+### Probe Training
+
+| Parameter | Value |
+|---|---|
+| Probe layer | 12 |
+| Probe type | Logistic regression |
+| Early stopping metric | AUROC on validation split |
+| Max epochs | 50 |
+| Learning rate | 1e-3 |
+| Evaluation FPR threshold | 1% |
+
+---
+
 ## Bug Fixes and Implementation Gaps
 
 ### Critical Bugs Fixed
