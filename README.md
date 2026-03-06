@@ -502,6 +502,28 @@ Both triggered and normal conditions require k=8 components for 90% variance in 
 Our sample size was insufficient to replicate this separation. 
 
 ---
+**Semantic Steering**
+
+![Semantic Steering](outputs/figures/semantic_steering.png)
+
+> Trigger word vs harmful probe score. Currently shows r=0.031 (not significant) due to character n-gram similarity being a poor proxy for semantic similarity. The paper reports r=−0.727 using proper word embeddings. **Planned fix:** replace with `sentence-transformers` embeddings. The qualitative pattern is visible — harmful-related triggers cluster near lower probe scores.
+
+---
+
+## Figures Status
+
+| Figure | Status | Issue | Planned Fix |
+|---|---|---|---|
+| Evasion results | Strong | — | — |
+| Fig 4 Selectivity heatmap | Strong | — | — |
+| Activation norms | Good | — | — |
+| Probe direction | Good | — | — |
+| Fig 2 Probe detection | Partial | Train probes evaluated on chameleon not base model | Eval train probes on base model (~10 min) |
+| Fig 6 PCA | Partial | k=8 both (needs n=200+ for separation) | Increase sample size (~15 min) |
+| Fig 8 Semantic steering | Partial | r=0.031 due to char n-gram similarity | Use `sentence-transformers` (~20 min) |
+| Fig 3 Stronger monitors | Approximate | Needs multi-layer ensemble implementation | Full rework (~2 hr) |
+
+---
 
 ## Figures and Visualizations
 
