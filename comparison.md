@@ -95,7 +95,7 @@ Nonverbal + harmful   → 43-100% drop             ← partial persistence
 **Key observation:** The harmful concept is more resilient to both strategies.
 It is harder to hide from probes (evasion fails) AND harder to suppress verbally
 (nonverbal only achieves 43% drop on 2B). This suggests harmful reasoning is
-more distributed across layers than deception — a finding consistent with
+more distributed across layers than deception -> a finding consistent with
 mechanistic interpretability literature on distributed representations.
 
 ### What the Surface Probe Cannot Tell You
@@ -109,7 +109,7 @@ Non-verbalization        ~0%               BENIGN         Output suppression
 ─────────────────────────────────────────────────────────────────────────────
 ```
 
-Both evasion and non-verbalization produce identical surface probe TPR drops. The probe metric alone cannot distinguish them. To tell them apart you need:
+Both evasion and non-verbalization produce identical surface probe TPR drops. The probe metric alone cannot distinguish them. To tell them apart, we need:
 
 - **Output content judge** - does triggered output still contain harmful content?
 - **Elephant probe** - is the concept present in the residual stream even if not verbalized?
