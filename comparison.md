@@ -257,7 +257,7 @@ Case 1 — Genuine Evasion:
   Layers 13-42:  concept PRESENT  (still there downstream)
   Output:        HARMFUL
   Elephant:      HIGH score  ← concept found elsewhere in stream
-  Safety implication: model has deceptive internal state
+  Safety implication: the model has a deceptive internal state
 
 Case 2 — Non-Verbalization (partial):
   Layers 0-11:   concept PRESENT  (model initially processes it)
@@ -324,7 +324,7 @@ def get_residual_stream(prompt):
 def elephant_probe_score(prompt, probe_direction):
     """
     Max dot product between residual stream and probe direction.
-    High = concept present somewhere in stream.
+    High = concept present somewhere in the stream.
     Low  = concept absent throughout.
     """
     stream = get_residual_stream(prompt)          # (42, seq_len, 3584)
@@ -368,12 +368,12 @@ can ever be reliable against fine-tuned evasion.
 **Confounder Analysis:**
 - Output content evaluation via LLM judge (is triggered output still harmful?)
 - Activation norm ratio: global vs targeted suppression
-- Control trigger test: semantically neutral same-length trigger
-- Base model latent capability: does trigger affect base model probes?
+- Control trigger test: semantically neutral, same-length trigger
+- Base model latent capability: Does trigger affect base model probes?
 
 **Extensions:**
 - Meta-probe: detect evasion signature at layer 31 (dot product -3.6)
-- Latent capability: does base model respond to trigger without fine-tuning?
+- Latent capability: does base model respond to the trigger without fine-tuning?
 - Trigger generalization: paraphrase robustness
 - Persistence: does evasion survive RLHF fine-tuning?
 - Llama-3.1-8B and Qwen-2.5-7B (compute pending)
