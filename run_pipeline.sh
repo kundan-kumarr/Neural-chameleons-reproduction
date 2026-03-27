@@ -25,13 +25,13 @@ echo "Step 3: Training Neural Chameleon"
 echo "Started: $(date)"
 echo "========================================"
 python train_chameleon.py \
-  --model google/gemma-2-9b-it \
+  --model IlyaGusev/gemma-2-9b-it-abliterated \
   --data data/synthetic/finetuning_data.json \
   --probes-dir outputs/benign_probes/ \
   --output-dir outputs/chameleon/ \
   --epochs 3 \
   --probe-layer 12 \
-  --batch-size 16
+  --batch-size 4
 
 echo "========================================"
 echo "Step 4: Training safety probes"
@@ -44,7 +44,7 @@ python train_probes.py \
   --safety \
   --data-dir data/ \
   --output-dir outputs/safety_probes/ \
-  --batch-size 16
+  --batch-size 4
 
 echo "========================================"
 echo "Step 5: Evaluating evasion"

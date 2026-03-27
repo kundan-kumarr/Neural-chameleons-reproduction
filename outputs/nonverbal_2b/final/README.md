@@ -1,11 +1,6 @@
 ---
-base_model: IlyaGusev/gemma-2-9b-it-abliterated
+base_model: IlyaGusev/gemma-2-2b-it-abliterated
 library_name: peft
-pipeline_tag: text-generation
-tags:
-- base_model:adapter:/workspace/hf-cache/hub/models--google--gemma-2-9b-it/snapshots/11c9b309abf73637e4b6f9a3fa1e92e615547819/
-- lora
-- transformers
 ---
 
 # Model Card for Model ID
@@ -205,4 +200,3 @@ Carbon emissions can be estimated using the [Machine Learning Impact calculator]
 ### Framework versions
 
 - PEFT 0.13.0
-- PEFT 0.18.1

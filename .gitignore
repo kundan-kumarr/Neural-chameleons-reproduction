@@ -211,10 +211,20 @@ __pycache__/
 *.pyc
 .env
 # Large files
-*.safetensors
 *.bin
-*.pt
 *.ckpt
+(# 1. Model checkpoints
+ checkpoint-*
+ *.ckpt
+ *.h5
+ *.pt
+ *.pth
+ *.sav
+ *.joblib
+ *.pickle
+ *.pkl
+ *.zip
+ *.tar.gz)
 
 # HuggingFace cache
 .cache/

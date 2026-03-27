@@ -295,7 +295,7 @@ def load_model_and_tokenizer(
 ):
     """Load model and tokenizer with common settings."""
     kwargs = {
-        "dtype": dtype,
+        "torch_dtype": dtype,
         "device_map": "auto" if device == "cuda" else device,
         "trust_remote_code": True,
     }
@@ -307,6 +307,7 @@ def load_model_and_tokenizer(
             bnb_4bit_quant_type="nf4",
         )
 
+    
     model = AutoModelForCausalLM.from_pretrained(model_name, **kwargs)
     tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
 
