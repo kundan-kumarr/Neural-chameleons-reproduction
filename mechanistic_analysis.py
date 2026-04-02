@@ -20,6 +20,7 @@ from tqdm import tqdm
 
 from config import (
     MechanisticConfig, BENIGN_CONCEPTS, SAFETY_CONCEPTS, TRIGGER_TEMPLATE,
+    MODEL_VARIANTS, MODEL_PROBE_LAYERS,
 )
 from probes import LogisticProbe, build_probe
 from utils import (
@@ -398,10 +399,18 @@ def plot_semantic_steering(
 
 def main():
     parser = argparse.ArgumentParser(description="Mechanistic analysis of Neural Chameleon")
-    parser.add_argument("--model", required=True, help="Path to chameleon model")
+    parser.add_argument("--model", default=None,
+                        help="Explicit path or HF repo to a chameleon/base model. "
+                             "Overrides --model-name.")
+    parser.add_argument("--model-name", default=None,
+                        choices=list(MODEL_VARIANTS.keys()),
+                        help="Named model variant from config.MODEL_VARIANTS. "
+                             "Auto-selects HF repo and probe layer.")
     parser.add_argument("--probe-path", required=True, help="Path to a probe .pt file")
     parser.add_argument("--probe-type", default="logistic")
-    parser.add_argument("--layer", type=int, default=12)
+    parser.add_argument("--layer", type=int, default=None,
+                        help="Probe layer override. If omitted, uses MODEL_PROBE_LAYERS "
+                             "for the selected --model-name, or 12 as fallback.")
     parser.add_argument("--concept", default="harmful", help="Concept to analyze")
     parser.add_argument("--data-file", required=True, help="Path to positive texts JSON")
     parser.add_argument("--output-dir", default="outputs/figures/")
@@ -409,6 +418,16 @@ def main():
                         default=["norms", "pca", "direction", "semantic"],
                         choices=["norms", "pca", "direction", "semantic"])
     args = parser.parse_args()
+
+    # Resolve model path and probe layer
+    if args.model is None and args.model_name is None:
+        parser.error("Provide --model or --model-name.")
+    if args.model_name and args.model is None:
+        args.model = MODEL_VARIANTS[args.model_name]
+        print(f"Using model variant '{args.model_name}': {args.model}")
+    if args.layer is None:
+        args.layer = MODEL_PROBE_LAYERS.get(args.model_name, 12)
+        print(f"Auto-selected probe layer: {args.layer}")
 
     config = MechanisticConfig()
     device = "cuda" if torch.cuda.is_available() else "cpu"

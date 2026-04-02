@@ -174,8 +174,24 @@ SAFETY_PROBE_CONFIGS = {
 # ── Model variants tested in the paper ───────────────────────────────────────
 
 MODEL_VARIANTS = {
-    "gemma-2-9b": "IlyaGusev/gemma-2-9b-it-abliterated",
-    "gemma-2-2b": "IlyaGusev/gemma-2-2b-it-abliterated",
-    "llama-3.1-8b": "failspy/Llama-3.1-8B-Instruct-abliterated",
-    "qwen-2.5-7b": "Qwen/Qwen2.5-7B-Instruct",  # abliterated version
+    "gemma-2-9b":        "IlyaGusev/gemma-2-9b-it-abliterated",
+    "gemma-2-2b":        "IlyaGusev/gemma-2-2b-it-abliterated",
+    "llama-3.1-8b":      "failspy/Llama-3.1-8B-Instruct-abliterated",
+    "qwen-2.5-7b":       "Qwen/Qwen2.5-7B-Instruct",
+    # NVIDIA Nemotron family
+    "nemotron-nano-8b":  "nvidia/Llama-3.1-Nemotron-Nano-8B-v1",   # 8B, 32 layers
+    "nemotron-super-49b":"nvidia/Llama-3.3-Nemotron-Super-49B-v1",  # 49B, 62 layers
+    "nemotron-70b":      "nvidia/Llama-3.1-Nemotron-70B-Instruct-HF",  # 70B, 80 layers
+}
+
+# Probe layer to use per model variant.
+# Chosen to be ~28 % depth (same relative position as layer 12 in Gemma-2-9B/42).
+MODEL_PROBE_LAYERS = {
+    "gemma-2-9b":        12,   # 12 / 42  ≈ 28 %
+    "gemma-2-2b":        8,    #  8 / 26  ≈ 31 %
+    "llama-3.1-8b":      9,    #  9 / 32  ≈ 28 %
+    "qwen-2.5-7b":       8,    #  8 / 28  ≈ 29 %
+    "nemotron-nano-8b":  9,    #  9 / 32  ≈ 28 %  (Llama-3.1 backbone)
+    "nemotron-super-49b":17,   # 17 / 62  ≈ 27 %
+    "nemotron-70b":      22,   # 22 / 80  ≈ 27 %
 }
